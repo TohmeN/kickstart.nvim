@@ -54,6 +54,7 @@ Kickstart Guide:
     (If you already know the Neovim basics, you can skip this step.)
 
   Once you've completed that, you can continue working through **AND READING** the rest
+init.lua
   of the kickstart init.lua.
 
   Next, run AND READ `:help`.
@@ -345,7 +346,7 @@ require('lazy').setup({
       -- Document existing key chains
       spec = {
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>T', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
@@ -436,6 +437,53 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      -- Harpoon settings
+      local harpoon = require 'harpoon'
+      vim.keymap.set('n', '<C-e>', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end, { desc = 'Open Harpoon Menu' })
+      vim.keymap.set('n', '<leader>t', function()
+        harpoon:list():add()
+      end, { desc = 'add harpoon [T]ab' })
+      vim.keymap.set('n', '<leader>h', function()
+        harpoon:list():select(1)
+      end, { desc = 'Harpoon go to Item 1' })
+      vim.keymap.set('n', '<leader>j', function()
+        harpoon:list():select(2)
+      end, { desc = 'Harpoon go to Item 2' })
+      vim.keymap.set('n', '<leader>k', function()
+        harpoon:list():select(3)
+      end, { desc = 'Harpoon go to Item 3' })
+      vim.keymap.set('n', '<leader>l', function()
+        harpoon:list():select(4)
+      end, { desc = 'Harpoon go to Item 4' })
+
+      harpoon:setup {}
+
+      -- basic telescope configuration
+      local conf = require('telescope.config').values
+      local function toggle_telescope(harpoon_files)
+        local file_paths = {}
+        for _, item in ipairs(harpoon_files.items) do
+          table.insert(file_paths, item.value)
+        end
+
+        require('telescope.pickers')
+          .new({}, {
+            prompt_title = 'Harpoon',
+            finder = require('telescope.finders').new_table {
+              results = file_paths,
+            },
+            previewer = conf.file_previewer {},
+            sorter = conf.generic_sorter {},
+          })
+          :find()
+      end
+
+      vim.keymap.set('n', '<C-e>', function()
+        toggle_telescope(harpoon:list())
+      end, { desc = 'Open harpoon window' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -619,7 +667,7 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
+            map('<leader>Th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
           end
@@ -772,7 +820,7 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -984,7 +1032,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
@@ -1014,3 +1062,27 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+require('guess-indent').setup {
+  auto_cmd = true, -- Set to false to disable automatic execution
+  override_editorconfig = false, -- Set to true to override settings set by .editorconfig
+  filetype_exclude = { -- A list of filetypes for which the auto command gets disabled
+    'netrw',
+    'tutor',
+  },
+  buftype_exclude = { -- A list of buffer types for which the auto command gets disabled
+    'help',
+    'nofile',
+    'terminal',
+    'prompt',
+  },
+  on_tab_options = { -- A table of vim options when tabs are detected
+    ['expandtab'] = false,
+  },
+  on_space_options = { -- A table of vim options when spaces are detected
+    ['expandtab'] = true,
+    ['tabstop'] = 'detected', -- If the option value is 'detected', The value is set to the automatically detected indent size.
+    ['softtabstop'] = 'detected',
+    ['shiftwidth'] = 'detected',
+  },
+}
